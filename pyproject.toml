@@ -20,6 +20,7 @@ dependencies = [
     "pyod>=2.0.5",
     "rich>=14.1.0",
     "scikit-learn>=1.7.2",
+    "setuptools>=80.9.0",
     "streamlit>=1.49.1",
     "xgboost>=3.0.5",
     "ydata-profiling>=4.16.1",
