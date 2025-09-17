@@ -45,7 +45,7 @@ dataset:
   path_raw: ./data/raw/
   path_intermediate: ./data/intermediate
   path_model_ready: ./data/model_ready
-  path_raw_dataset: ${dataset.path_raw}/mmc1.csv
+  path_raw_dataset: ${dataset.path_raw}/CPT_PremstallerGeotechnik_revised.csv
   path_model_ready_train: ${dataset.path_model_ready}/dataset_train.csv
   path_model_ready_test: ${dataset.path_model_ready}/dataset_test.csv
 
