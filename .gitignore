@@ -10,3 +10,6 @@ tmp
 
 # uv environment
 .venv/
+
+# vscode settings
+.vscode/
