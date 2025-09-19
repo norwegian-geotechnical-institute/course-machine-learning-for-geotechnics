@@ -25,7 +25,7 @@ def main():
             "The model is built in the applied machine learning course at the Norwegian Geotechnical Institute (NGI): [https://www.ngi.no/](https://www.ngi.no/)"
         )
         st.write(
-            "For more information about geotechnical data and applied machine learning, check out this NGI course: [Introduction to Applied Machine Learning - Using Geotechnical Data](https://www.ngi.no/en/events/ngi-code-academy/introduction-to-applied-machine-learning---using-geotechnical-data-pilot-course/)"
+            "For more information about geotechnical data and applied machine learning, check out this NGI course: [Introduction to Applied Machine Learning - Using Geotechnical Data](https://www.ngi.no/en/events/ngi-code-academy/applied-machine-learning-using-geotechnical-data/)"
         )
 
     # include an expander that describe the dataformat for the csv file to upload
