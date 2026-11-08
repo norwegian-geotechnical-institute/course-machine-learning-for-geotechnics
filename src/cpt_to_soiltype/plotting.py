@@ -1,5 +1,6 @@
 """Plotting functionality"""
 
+from pathlib import Path
 from typing import Any
 
 import matplotlib.pyplot as plt
@@ -107,7 +108,9 @@ def plot_confusion_matrix(
     # Build ordered lists for confusion matrix display, handling both numeric and non-numeric labels
     class_label_numbers: list[Any] = []
     class_labels: list[str] = []
-    for orig_lbl, num_lbl in zip(present_labels_series, present_labels_numeric):
+    for orig_lbl, num_lbl in zip(
+        present_labels_series, present_labels_numeric, strict=True
+    ):
         if pd.notna(num_lbl):
             lbl = int(num_lbl)
             class_label_numbers.append(lbl)
@@ -163,3 +166,102 @@ def add_black_grid_lines(ax: plt.Axes, conf_matrix: np.ndarray) -> None:
     ax.set_xticks(np.arange(conf_matrix.shape[1]) + 0.5, minor=True)
     ax.set_yticks(np.arange(conf_matrix.shape[0]) + 0.5, minor=True)
     ax.tick_params(which="minor", size=0)
+
+
+def plot_qc_boxplot_by_oberhollenzer_classes(
+    csv_path: str | Path = "data/model_ready/cpt_dataset_total.csv",
+    save_path: str | Path | None = None,
+    show: bool = False,
+) -> plt.Figure:
+    """Create a boxplot of qc for each Oberhollenzer class (8 boxes expected).
+
+    Parameters:
+    - csv_path: Path to the model-ready dataset CSV containing columns for qc and Oberhollenzer_classes.
+    - save_path: Optional output image path. If not provided, saves under plots/EDA/qc_boxplot_by_oberhollenzer_classes.png.
+    - show: If True, display the plot window (useful outside notebooks/Streamlit).
+
+    Returns:
+    - The matplotlib Figure object for further manipulation or testing.
+    """
+    csv_path = Path(csv_path)
+    if not csv_path.exists():
+        raise FileNotFoundError(f"Dataset not found at: {csv_path}")
+
+    # Read data
+    df = pd.read_csv(csv_path, low_memory=False)
+
+    # Detect qc column (dataset commonly uses 'qc (MPa)')
+    qc_candidates = [
+        "qc (MPa)",
+        "qc",
+        "qc_MPa",
+        "qc(MPa)",
+    ]
+    qc_col = next((c for c in qc_candidates if c in df.columns), None)
+    if qc_col is None:
+        raise KeyError(
+            "Could not find a qc column in the dataset. Looked for: "
+            + ", ".join(qc_candidates)
+        )
+
+    class_col = "Oberhollenzer_classes"
+    if class_col not in df.columns:
+        raise KeyError(
+            f"Could not find '{class_col}' column in the dataset. Available columns: {list(df.columns)[:20]}..."
+        )
+
+    # Clean and prepare
+    plot_df = df[[qc_col, class_col]].dropna()
+    # Ensure classes are integers (values are typically 0..7 or 1..7)
+    plot_df[class_col] = pd.to_numeric(plot_df[class_col], errors="coerce").astype(
+        "Int64"
+    )
+    plot_df = plot_df.dropna(subset=[class_col])
+    plot_df[class_col] = plot_df[class_col].astype(int)
+
+    # Determine class order (expect 8 classes 0..7). Use present classes if fewer to avoid errors.
+    expected_order = list(range(8))
+    present_classes = sorted(plot_df[class_col].unique().tolist())
+    if set(expected_order).issubset(set(present_classes)):
+        class_order = expected_order
+    else:
+        class_order = present_classes  # Fall back gracefully if not all 8 are present
+
+    data = [plot_df.loc[plot_df[class_col] == k, qc_col].values for k in class_order]
+
+    # Configure plot appearance
+    plt.rcParams.update(
+        {
+            "axes.titlesize": 16,
+            "axes.labelsize": 14,
+            "xtick.labelsize": 12,
+            "ytick.labelsize": 12,
+        }
+    )
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.boxplot(data, labels=[str(k) for k in class_order], showfliers=False)
+    ax.set_xlabel("Oberhollenzer class")
+    ax.set_ylabel("qc (MPa)" if qc_col == "qc (MPa)" else qc_col)
+    title_suffix = (
+        " (all 8 classes)"
+        if class_order == expected_order
+        else f" (classes: {class_order})"
+    )
+    ax.set_title(f"qc distribution by Oberhollenzer class{title_suffix}")
+    ax.grid(axis="y", linestyle=":", alpha=0.5)
+
+    plt.tight_layout()
+
+    # Save if requested or default location
+    if save_path is None:
+        save_path = Path("plots/EDA/qc_boxplot_by_oberhollenzer_classes.png")
+    else:
+        save_path = Path(save_path)
+    save_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(save_path, dpi=200)
+
+    if show:
+        plt.show()
+
+    return fig
